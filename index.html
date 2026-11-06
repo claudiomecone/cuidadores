@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Desafios no cuidado de pessoas com demência</title>
+<style>
+  :root{--bg:#f3f8f9;--tx:#16262e;--mut:#3d5560;--pri:#1d5c78;--pri2:#154560;--ver:#2b6a4d;--borda:#7f9aa6;--card:#fff;--err:#8a1c1c;--errbg:#fdeeee;--info:#e5f1ee}
+  *{box-sizing:border-box}
+  html{font-size:100%}
+  body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:1.125rem;line-height:1.6}
+  [hidden]{display:none!important}
+  main{max-width:640px;margin:0 auto;padding:16px 16px 40px}
+  h1{font-size:1.3rem;line-height:1.3;margin:8px 0 4px;color:var(--pri2)}
+  h2{font-size:1.4rem;line-height:1.3;margin:20px 0 12px;color:var(--pri2)}
+  h2:focus{outline:none}
+  .etapa{font-weight:700;margin:4px 0}
+  progress{width:100%;height:14px;accent-color:var(--ver);display:block}
+  p{margin:0 0 14px}
+  .hint{color:var(--mut);font-size:1rem;margin:0 0 10px}
+  .q{background:var(--card);border:1px solid #c3d3da;border-radius:14px;padding:16px;margin-bottom:18px}
+  .q.sub{margin-top:-8px;border-style:dashed}
+  fieldset{border:0;margin:0;padding:0;min-width:0}
+  legend.ql,label.ql{display:block;font-weight:700;margin-bottom:8px;padding:0}
+  .ast{color:var(--err)}
+  .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .opt{display:flex;align-items:center;gap:12px;min-height:52px;padding:10px 14px;margin-bottom:8px;background:#fff;border:2px solid var(--borda);border-radius:12px;cursor:pointer}
+  .opt input{width:26px;height:26px;flex:none;margin:0;accent-color:var(--pri)}
+  .opt:has(input:checked){background:var(--info);border-color:var(--ver)}
+  .opt:focus-within{outline:3px solid #0b3d91;outline-offset:2px}
+  input[type=text],input[type=tel],textarea{width:100%;min-height:52px;padding:10px 14px;font:inherit;color:var(--tx);background:#fff;border:2px solid var(--borda);border-radius:12px}
+  textarea{resize:vertical}
+  #f_q02_codigo{text-transform:uppercase;letter-spacing:.1em}
+  :focus-visible{outline:3px solid #0b3d91;outline-offset:2px}
+  .row{border:1px solid #c3d3da;border-radius:12px;padding:12px;margin-bottom:12px;background:#f9fcfc}
+  .row legend{font-weight:600;padding:0 4px}
+  .opts{display:flex;flex-direction:column}
+  .scale .opts{flex-direction:row;flex-wrap:wrap;gap:8px}
+  .scale .opt{width:56px;min-height:52px;margin:0;padding:0;justify-content:center;position:relative;font-weight:700}
+  .scale .opt input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+  .scale .opt:has(input:checked){background:var(--pri);border-color:var(--pri2);color:#fff}
+  .erro:empty,.aviso:empty{display:none}
+  .erro{background:var(--errbg);color:var(--err);border-left:6px solid var(--err);padding:8px 12px;margin:0 0 10px;border-radius:6px;font-weight:600}
+  .aviso{background:#fff6dd;color:#5a4300;border-left:6px solid #b58900;padding:8px 12px;margin:0 0 10px;border-radius:6px}
+  .info{background:var(--info);border-left:6px solid var(--ver);padding:10px 14px;border-radius:6px;margin-top:8px;font-weight:600}
+  .alerta{background:#fff1e0;border:2px solid #a65a00;color:#4a2900;padding:14px;border-radius:12px;margin:14px 0;font-weight:600}
+  nav{display:flex;gap:12px;margin-top:8px}
+  button{font:inherit;font-weight:700;min-height:52px;padding:10px 22px;border-radius:12px;border:2px solid var(--pri);cursor:pointer}
+  .bp{background:var(--pri);color:#fff;flex:1}
+  .bs{background:#fff;color:var(--pri2)}
+  button:disabled{opacity:.6;cursor:not-allowed}
+  #status{margin-top:12px}
+  @media(min-width:700px){.row:not(.scale) .opts{flex-direction:row;gap:8px}.row:not(.scale) .opt{flex:1;margin-bottom:0}}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <header id="cab">
+    <h1>Desafios no cuidado de pessoas com demência</h1>
+    <p class="etapa" id="etapaTxt" aria-live="polite"></p>
+    <progress id="prog" max="100" value="0" aria-label="Progresso do questionário"></progress>
+  </header>
+  <noscript><p class="erro">Este questionário precisa do JavaScript ativado no navegador.</p></noscript>
+  <form id="form" novalidate onsubmit="return false">
+    <div id="tela"></div>
+    <nav id="nav">
+      <button type="button" class="bs" id="btnVoltar">Voltar</button>
+      <button type="button" class="bp" id="btnNext">Continuar</button>
+    </nav>
+    <div id="status" aria-live="polite"></div>
+  </form>
+  <section id="fim" hidden tabindex="-1"></section>
+</main>
+
+<script>
+/* ============================================================
+   CONFIGURAÇÃO: coloque aqui o endereço do seu envio
+   (ex.: URL do Web App do Google Apps Script terminando em /exec).
+   ============================================================ */
+const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbzrukWgD8n8uVyykREm1iwSZvSTsKg-3P-YQg7sbhK_AsfrHdLRP2VvyqjBW_SxvUqmZQ/exec"; // <-- COLOQUE O ENDEREÇO AQUI
+
+/* ------------------------------------------------------------
+   EXEMPLO DE GOOGLE APPS SCRIPT (Extensões > Apps Script na planilha)
+   Implantar > Nova implantação > App da Web > Acesso: "Qualquer pessoa".
+
+   function doPost(e) {
+     var d = JSON.parse(e.postData.contents);
+     var ss = SpreadsheetApp.getActiveSpreadsheet();
+     var sh = ss.getSheetByName('Respostas') || ss.insertSheet('Respostas');
+     if (sh.getLastRow() === 0) sh.appendRow(Object.keys(d));      // cabeçalho
+     var cab = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+     sh.appendRow(cab.map(function (k) { return d[k] === undefined ? '' : d[k]; }));
+     return ContentService.createTextOutput(JSON.stringify({ok: true}))
+            .setMimeType(ContentService.MimeType.JSON);
+   }
+   Obs.: o envio usa Content-Type text/plain para evitar bloqueio CORS (preflight).
+   Use o campo id_envio para remover duplicatas, se necessário.
+   ------------------------------------------------------------ */
+
+(function () {
+'use strict';
+
+/* ---------- Opções (código, texto) ---------- */
+const SN = [['1','Sim'],['2','Não']];
+const FREQ5 = [['1','Nunca'],['2','Poucas vezes'],['3','Algumas vezes'],['4','Muitas vezes'],['5','Quase sempre']];
+const SC = Array.from({length:11},(_,i)=>[String(i),String(i)]);
+const O17 = [['1','Agressividade, irritabilidade ou agitação'],['2','Tristeza, apatia ou ansiedade da pessoa'],['3','Resistência a cuidados (banho, comida, remédios)'],['4','Dificuldade de comunicação'],['5','Sono e confusão entre dia e noite'],['6','Incontinência e higiene'],['7','Alimentação e nutrição'],['8','Quedas e segurança em casa'],['9','Mobilidade e fisioterapia'],['10','Organização da rotina e dos medicamentos'],['11','Relação e divisão de tarefas com a família'],['12','Questões jurídicas, burocráticas ou financeiras'],['13','Meu cansaço e estresse'],['14','Culpa, tristeza ou medo do futuro'],['15','Isolamento e falta de tempo para mim'],['16','Outro']];
+
+/* ---------- Perguntas ---------- */
+const Q = {
+ consentimento:{id:'consentimento',type:'radio',text:'Concordo em participar e com o uso dos meus dados desta forma.',req:true,opts:[['1','Sim, concordo'],['2','Não concordo – encerrar o formulário']]},
+ contato_autoriza:{id:'contato_autoriza',type:'radio',text:'Posso entrar em contato por telefone ou WhatsApp?',opts:[['1','Sim (informe o número abaixo)'],['2','Não']]},
+ contato_telefone:{id:'contato_telefone',type:'tel',sub:true,text:'Telefone ou WhatsApp, com DDD',hint:'Exemplo: (21) 99999-9999',req:a=>a.contato_autoriza==='1',show:a=>a.contato_autoriza==='1'},
+
+ q01_momento:{id:'q01_momento',num:1,type:'radio',text:'Em que momento você está respondendo?',req:true,opts:[['1','Antes dos encontros'],['2','Logo após os encontros'],['3','30 dias depois'],['4','90 dias depois']]},
+ q02_codigo:{id:'q02_codigo',num:2,type:'text',text:'Código do participante',req:true,hint:'Use as 2 primeiras letras do seu nome + dia e mês de nascimento. Exemplo: CL1503. Este código permite comparar suas respostas ao longo do tempo sem mostrar seu nome.'},
+ q03_primeira_aula:{id:'q03_primeira_aula',num:3,type:'radio',text:'Você participou da primeira aula sobre funções do cérebro e demências?',req:true,opts:SN,note:{show:a=>a.q03_primeira_aula==='2',text:'Entraremos em contato para reagendar a primeira aula.'}},
+
+ q04_faixa_etaria:{id:'q04_faixa_etaria',num:4,type:'radio',text:'Qual é a sua faixa de idade?',req:true,opts:[['1','Até 29 anos'],['2','30 a 44 anos'],['3','45 a 59 anos'],['4','60 a 74 anos'],['5','75 anos ou mais']]},
+ q05_parentesco:{id:'q05_parentesco',num:5,type:'radio',text:'Qual é a sua relação com a pessoa de quem você cuida?',req:true,opts:[['1','Cônjuge ou companheiro(a)'],['2','Filho(a)'],['3','Genro ou nora'],['4','Neto(a)'],['5','Irmão(ã)'],['6','Sobrinho(a)'],['7','Outro familiar'],['8','Amigo ou vizinho'],['9','Cuidador(a) profissional']]},
+ q06_mora_junto:{id:'q06_mora_junto',num:6,type:'radio',text:'Você mora na mesma casa que a pessoa de quem cuida?',req:true,opts:SN},
+ q07_trabalho:{id:'q07_trabalho',num:7,type:'radio',text:'Você trabalha fora ou tem outra ocupação além do cuidado?',req:true,opts:[['1','Sim, tempo integral'],['2','Sim, meio período'],['3','Não']]},
+
+ q08_idade_cuidado:{id:'q08_idade_cuidado',num:8,type:'radio',text:'Qual é a idade da pessoa de quem você cuida?',req:true,opts:[['1','Até 59 anos'],['2','60 a 69 anos'],['3','70 a 79 anos'],['4','80 a 89 anos'],['5','90 anos ou mais']]},
+ q09_diagnostico:{id:'q09_diagnostico',num:9,type:'radio',text:'Qual diagnóstico foi informado?',req:true,opts:[['1','Doença de Alzheimer'],['2','Demência vascular'],['3','Demência com corpos de Lewy'],['4','Demência frontotemporal'],['5','Demência mista'],['6','Demência na doença de Parkinson'],['7','Hidrocefalia de pressão normal'],['8','Ainda em investigação'],['9','Não sei'],['10','Outro']]},
+ q09_outro_texto:{id:'q09_outro_texto',type:'text',sub:true,text:'Qual outro diagnóstico?',show:a=>a.q09_diagnostico==='10'},
+ q10_fase:{id:'q10_fase',num:10,type:'radio',text:'Na sua opinião, em que fase está a doença?',req:true,opts:[['1','Leve: faz quase tudo sozinho(a)'],['2','Moderada: precisa de ajuda em várias tarefas'],['3','Avançada: depende de ajuda na maior parte do dia'],['4','Não sei']]},
+
+ q11:{id:'q11',num:11,type:'grid',text:'Para cada atividade, qual ajuda a pessoa precisa?',req:true,cols:[['1','Faz sozinho(a)'],['2','Precisa de ajuda parcial'],['3','Depende totalmente']],rows:[{id:'q11a_banho',label:'Tomar banho'},{id:'q11b_vestir',label:'Vestir-se'},{id:'q11c_alimentar',label:'Alimentar-se'},{id:'q11d_banheiro',label:'Ir ao banheiro / controle urinário'},{id:'q11e_locomocao',label:'Caminhar / locomoção'},{id:'q11f_remedios',label:'Tomar os remédios'}]},
+ q12_eventos:{id:'q12_eventos',num:12,type:'check',text:'Nos últimos 3 meses, a pessoa teve:',hint:'Pode marcar mais de uma.',req:true,exclusive:'5',opts:[['1','Queda'],['2','Internação'],['3','Ida ao pronto-socorro'],['4','Fuga ou saída de casa sem avisar'],['5','Nenhuma dessas']]},
+
+ q13_horas_dia:{id:'q13_horas_dia',num:13,type:'radio',text:'Em média, quantas horas POR DIA você dedica ao cuidado?',req:true,opts:[['1','Até 2 h'],['2','3 a 6 h'],['3','7 a 12 h'],['4','Mais de 12 h'],['5','24 h, sem pausas']]},
+ q14_tempo_cuidado:{id:'q14_tempo_cuidado',num:14,type:'radio',text:'Há quanto tempo você cuida?',req:true,opts:[['1','Menos de 6 meses'],['2','6 a 12 meses'],['3','1 a 3 anos'],['4','3 a 5 anos'],['5','Mais de 5 anos']]},
+ q15_ajudantes:{id:'q15_ajudantes',num:15,type:'radio',text:'Quantas pessoas ajudam regularmente no cuidado, além de você?',req:true,opts:[['0','Nenhuma'],['1','1 pessoa'],['2','2 pessoas'],['3','3 ou mais']]},
+ q16_apoios:{id:'q16_apoios',num:16,type:'check',text:'Que tipo de apoio você recebe?',hint:'Pode marcar mais de uma.',exclusive:'7',opts:[['1','Ajuda física no dia a dia'],['2','Apoio financeiro'],['3','Apoio emocional'],['4','Cuidador(a) remunerado(a)'],['5','Serviços públicos de saúde'],['6','Grupo de apoio'],['7','Nenhum']]},
+
+ q17_desafios:{id:'q17_desafios',num:17,type:'check',text:'Escolha NO MÁXIMO 3 situações que mais afetam você hoje.',req:true,max:3,opts:O17},
+ q17_outro_texto:{id:'q17_outro_texto',type:'text',sub:true,text:'Qual outra situação?',show:a=>(a.q17_desafios||[]).includes('16')},
+ q18_mais_dificil:{id:'q18_mais_dificil',num:18,type:'radio',text:'Dessas, qual é a MAIS difícil hoje?',req:true,dyn:true,opts:[]},
+ q19_porque:{id:'q19_porque',num:19,type:'area',text:'Se quiser, conte em poucas palavras por quê.',hint:'Esta pergunta é opcional.'},
+
+ q20_sem_saber_agir:{id:'q20_sem_saber_agir',num:20,type:'radio',text:'Com que frequência você se sente sem saber como agir diante de uma situação difícil?',req:true,opts:[['1','Nunca'],['2','Raramente'],['3','Às vezes'],['4','Frequentemente'],['5','Sempre']]},
+ q21:{id:'q21',num:21,type:'grid',scale:true,text:'Qual é o seu nível de confiança para:',hint:'0 = nada confiante · 10 = totalmente confiante',req:true,cols:SC,rows:[{id:'q21a_conf_comportamento',label:'a) Lidar com mudanças de comportamento e de humor'},{id:'q21b_conf_memoria',label:'b) Lidar com esquecimentos e dificuldades de comunicação'},{id:'q21c_conf_descanso',label:'c) Reservar tempo para descansar e cuidar de si'}]},
+
+ q22:{id:'q22',num:22,type:'grid',text:'Nas últimas 2 semanas, com que frequência:',req:true,cols:FREQ5,rows:[{id:'q22a_sobrecarga',label:'a) Você se sentiu sobrecarregado(a) pelo cuidado?'},{id:'q22b_sem_tempo',label:'b) Sentiu que não tem tempo suficiente para você?'},{id:'q22c_cansaco',label:'c) Sentiu-se cansado(a) física ou emocionalmente?'},{id:'q22d_dores',label:'d) Teve dores no corpo por causa do esforço do cuidado?'},{id:'q22e_tristeza',label:'e) Sentiu-se triste, sem esperança ou sem vontade de fazer as coisas?'},{id:'q22f_sono_pouco',label:'f) Dormiu menos do que precisa?'}]},
+ q23_horas_sono:{id:'q23_horas_sono',num:23,type:'radio',text:'Quantas horas você dorme por noite, em média?',req:true,opts:[['1','Menos de 4 horas'],['2','4 a 5 horas'],['3','6 a 7 horas'],['4','8 horas ou mais']]},
+ q24_acompanhamento:{id:'q24_acompanhamento',num:24,type:'radio',text:'Você faz algum acompanhamento de saúde para si (médico, psicólogo ou outro)?',opts:[['1','Sim'],['2','Não'],['3','Gostaria, mas não consigo']]},
+
+ q25_entendimento:{id:'q25_entendimento',num:25,type:'scale',text:'Quanto você entende o diagnóstico da pessoa de quem cuida?',hint:'0 = nada · 10 = muito bem',req:true,cols:SC},
+ q26:{id:'q26',num:26,type:'grid',text:'Responda Verdadeiro, Falso ou Não sei:',req:true,cols:[['1','Verdadeiro'],['2','Falso'],['3','Não sei']],rows:[{id:'q26a_cura',label:'a) A doença de Alzheimer tem cura se o tratamento começar cedo.'},{id:'q26b_repetir',label:'b) Repetir uma explicação com calma e frases curtas pode ajudar na comunicação.'},{id:'q26c_comportamento',label:'c) Mudanças de comportamento podem ser parte da doença, e não "birra" ou "má vontade".'},{id:'q26d_exercicio',label:'d) Exercícios e atividades podem ajudar na qualidade de vida, mas não impedem a doença de avançar.'},{id:'q26e_corrigir',label:'e) Discutir ou corrigir a pessoa a cada esquecimento costuma ajudar.'}]},
+ q27_quer_entender:{id:'q27_quer_entender',num:27,type:'area',text:'O que você gostaria de entender melhor sobre a doença?',hint:'Esta pergunta é opcional.'},
+
+ q28_orientacoes:{id:'q28_orientacoes',num:28,type:'check',text:'Que orientações seriam mais úteis? Escolha até 3.',req:true,max:3,opts:[['1','Como lidar com agressividade e agitação'],['2','Como se comunicar melhor'],['3','Sono'],['4','Banho e higiene'],['5','Alimentação'],['6','Quedas e segurança'],['7','Atividades e estímulos cognitivos'],['8','Fisioterapia e exercícios'],['9','Medicamentos'],['10','Direitos, benefícios e curatela'],['11','Cuidar de mim'],['12','Outro']]},
+ q28_outro_texto:{id:'q28_outro_texto',type:'text',sub:true,text:'Qual outra orientação?',show:a=>(a.q28_orientacoes||[]).includes('12')},
+ q29_servicos:{id:'q29_servicos',num:29,type:'check',text:'Quais serviços você gostaria de ter?',hint:'Pode marcar mais de uma.',opts:[['1','Grupo de apoio para familiares'],['2','Atendimento psicológico'],['3','Fisioterapia'],['4','Orientação jurídica e social'],['5','Centro-dia'],['6','Cuidador de apoio'],['7','Material impresso ou manual'],['8','Gravação dos encontros'],['9','Grupo de WhatsApp']]},
+ q30_canais:{id:'q30_canais',num:30,type:'check',text:'Como você prefere receber informações?',hint:'Pode marcar mais de uma.',opts:[['1','Encontros presenciais'],['2','Online ao vivo'],['3','Vídeos gravados'],['4','Material escrito'],['5','WhatsApp']]},
+ q30_melhor_horario:{id:'q30_melhor_horario',type:'text',sub:true,text:'Melhor dia e horário para você:',hint:'Opcional. Exemplo: terças, à tarde.'},
+
+ q31_situacao_marcante:{id:'q31_situacao_marcante',num:31,type:'radio',text:'Houve uma situação recente que marcou você no cuidado?',opts:SN},
+ q32_situacao_relato:{id:'q32_situacao_relato',num:32,type:'area',text:'O que aconteceu antes, o que a pessoa fez e o que aconteceu depois?',hint:'Opcional.',show:a=>a.q31_situacao_marcante==='1'},
+ q33_avaliacao_encontros:{id:'q33_avaliacao_encontros',num:33,type:'scale',text:'Qual nota você dá aos encontros?',hint:'0 = nada útil · 10 = muito útil',req:true,cols:SC,show:a=>!!a.q01_momento&&a.q01_momento!=='1'},
+ q34_melhorar_manter:{id:'q34_melhorar_manter',num:34,type:'area',text:'O que podemos melhorar ou manter?',hint:'Esta pergunta é opcional.'}
+};
+
+/* ---------- Telas (uma seção por tela) ---------- */
+const SCREENS = [
+ {title:'Boas-vindas e consentimento',intro:['Olá! Obrigado por participar. Este questionário leva de 10 a 12 minutos. Você pode parar e continuar depois: suas respostas ficam guardadas neste aparelho enquanto a página estiver aberta.','Estas respostas serão usadas para melhorar os encontros e o apoio a cuidadores. Não é necessário informar seu nome. Os dados serão tratados de forma sigilosa e apresentados apenas de forma agrupada, conforme a LGPD. Você pode deixar de responder qualquer pergunta.'],qs:['consentimento','contato_autoriza','contato_telefone']},
+ {title:'Sobre esta resposta',qs:['q01_momento','q02_codigo','q03_primeira_aula']},
+ {title:'Sobre você',qs:['q04_faixa_etaria','q05_parentesco','q06_mora_junto','q07_trabalho']},
+ {title:'Sobre a pessoa cuidada',qs:['q08_idade_cuidado','q09_diagnostico','q09_outro_texto','q10_fase']},
+ {title:'Atividades do dia a dia',qs:['q11','q12_eventos']},
+ {title:'Sua rotina de cuidado',qs:['q13_horas_dia','q14_tempo_cuidado','q15_ajudantes','q16_apoios']},
+ {title:'Seus desafios',qs:['q17_desafios','q17_outro_texto','q18_mais_dificil','q19_porque']},
+ {title:'Como você está',qs:['q20_sem_saber_agir','q21']},
+ {title:'Seu cansaço e seu sono',qs:['q22','q23_horas_sono','q24_acompanhamento']},
+ {title:'O que você sabe sobre a doença',qs:['q25_entendimento','q26','q27_quer_entender']},
+ {title:'O que você precisa',qs:['q28_orientacoes','q28_outro_texto','q29_servicos','q30_canais','q30_melhor_horario']},
+ {title:'Sua experiência',qs:['q31_situacao_marcante','q32_situacao_relato','q33_avaliacao_encontros','q34_melhorar_manter']},
+ {title:'Revisar e enviar',final:true,qs:[]}
+];
+const LAST = SCREENS.length-1;
+const ORDER = [].concat(...SCREENS.map(s=>s.qs));
+const NAMEQ = {};
+ORDER.forEach(k=>{const q=Q[k]; if(q.rows) q.rows.forEach(r=>NAMEQ[r.id]=q); else NAMEQ[q.id]=q;});
+const idsOf = q => q.rows ? q.rows.map(r=>r.id) : [q.id];
+const GABARITO = {q26a_cura:'2',q26b_repetir:'1',q26c_comportamento:'1',q26d_exercicio:'1',q26e_corrigir:'2'};
+
+/* ---------- Estado e sessionStorage ---------- */
+const KEY = 'cuidadores_demencia_v1';
+function load(){try{return JSON.parse(sessionStorage.getItem(KEY));}catch(e){return null;}}
+function save(){try{sessionStorage.setItem(KEY,JSON.stringify(st));}catch(e){}}
+function uid(){return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():'id-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);}
+let st = load();
+if(!st||typeof st!=='object'||!st.A){st={A:{},S:0,inicio:Date.now(),done:null,idEnvio:uid()};}
+const A = st.A;
+let sending = false;
+
+/* ---------- Utilitários de DOM ---------- */
+const $ = id => document.getElementById(id);
+function h(tag,attrs,...kids){
+  const e=document.createElement(tag);
+  for(const k in (attrs||{})){ if(k==='class')e.className=attrs[k]; else if(k==='text')e.textContent=attrs[k]; else e.setAttribute(k,attrs[k]); }
+  kids.flat().forEach(x=>{ if(x) e.append(x); });
+  return e;
+}
+function qtext(q){
+  const f=document.createDocumentFragment();
+  f.append((q.num?q.num+'. ':'')+q.text);
+  if(q.req===true){ f.append(' ',h('span',{class:'ast','aria-hidden':'true',text:'*'}),h('span',{class:'vh',text:' (obrigatória)'})); }
+  return f;
+}
+function opt(name,type,code,text,checked){
+  const id=name+'_'+code;
+  const inp=h('input',{type,name,id,value:code});
+  if(checked) inp.checked=true;
+  return h('label',{class:'opt',for:id},inp,h('span',{text}));
+}
+function row(q,r){
+  const box=r.label?h('fieldset',{class:'row'+(q.scale?' scale':'')}):h('div',{class:'row scale',role:'radiogroup','aria-label':q.text});
+  if(r.label) box.append(h('legend',{text:r.label}));
+  const g=h('div',{class:'opts'});
+  q.cols.forEach(([c,t])=>g.append(opt(r.id,'radio',c,t,A[r.id]===c)));
+  box.append(g);
+  return box;
+}
+
+/* ---------- Opções dinâmicas da pergunta 18 ---------- */
+let dynCache='';
+function fillDyn(){
+  const q=Q.q18_mais_dificil, cont=$('o_q18_mais_dificil'); if(!cont) return;
+  const key=JSON.stringify([A.q17_desafios,A.q17_outro_texto]);
+  if(key===dynCache && cont.children.length) return;
+  dynCache=key; cont.textContent='';
+  const sel=A.q17_desafios||[];
+  if(!sel.length){ cont.append(h('p',{class:'hint',text:'Primeiro escolha as situações na pergunta anterior.'})); delete A.q18_mais_dificil; return; }
+  if(!sel.includes(A.q18_mais_dificil)) delete A.q18_mais_dificil;
+  O17.filter(o=>sel.includes(o[0])).forEach(([c,t])=>{
+    if(c==='16') t='Outro'+(A.q17_outro_texto?': '+A.q17_outro_texto:'');
+    cont.append(opt('q18_mais_dificil','radio',c,t,A.q18_mais_dificil===c));
+  });
+}
+
+/* ---------- Montagem de uma pergunta ---------- */
+function renderQ(q){
+  const w=h('div',{class:'q'+(q.sub?' sub':''),id:'w_'+q.id});
+  const err=h('div',{class:'erro',id:'e_'+q.id,'aria-live':'polite'});
+  if(q.type==='text'||q.type==='area'||q.type==='tel'){
+    const hid=q.hint?'h_'+q.id:null;
+    w.append(h('label',{for:'f_'+q.id,class:'ql'},qtext(q)));
+    if(q.hint) w.append(h('p',{class:'hint',id:hid,text:q.hint}));
+    w.append(err);
+    const at={id:'f_'+q.id,name:q.id,'aria-describedby':'e_'+q.id+(hid?' '+hid:''),autocomplete:'off'};
+    let f;
+    if(q.type==='area'){at.rows='4'; f=h('textarea',at);}
+    else{ at.type=q.type==='tel'?'tel':'text'; if(q.id==='q02_codigo'){at.maxlength='6';at.autocapitalize='characters';at.spellcheck='false';} if(q.type==='tel'){at.inputmode='tel';at.autocomplete='tel';} f=h('input',at); }
+    f.value=A[q.id]||'';
+    w.append(f);
+  } else {
+    const fs=h('fieldset'); fs.append(h('legend',{class:'ql'},qtext(q)));
+    if(q.hint) fs.append(h('p',{class:'hint',text:q.hint}));
+    fs.append(err);
+    if(q.max) fs.append(h('div',{class:'aviso',id:'a_'+q.id,'aria-live':'polite'}));
+    if(q.type==='radio'||q.type==='check'){
+      const g=h('div',{id:'o_'+q.id});
+      if(!q.dyn){
+        const t=q.type==='radio'?'radio':'checkbox';
+        q.opts.forEach(([c,tx])=>g.append(opt(q.id,t,c,tx,t==='radio'?A[q.id]===c:(A[q.id]||[]).includes(c))));
+      }
+      fs.append(g);
+    } else if(q.type==='scale'){
+      fs.append(row(q,{id:q.id}));
+    } else if(q.type==='grid'){
+      q.rows.forEach(r=>fs.append(row(q,r)));
+    }
+    w.append(fs);
+  }
+  if(q.note) w.append(h('div',{class:'info',id:'n_'+q.id,role:'status',text:q.note.text}));
+  return w;
+}
+
+/* ---------- Respostas, validação e visibilidade ---------- */
+function visible(q){return !q.show||q.show(A);}
+function isReq(q){return typeof q.req==='function'?q.req(A):!!q.req;}
+function answered(q){
+  if(q.rows) return q.rows.every(r=>A[r.id]!==undefined&&A[r.id]!=='');
+  const v=A[q.id];
+  if(Array.isArray(v)) return v.length>0;
+  return v!==undefined&&String(v).trim()!=='';
+}
+function errorFor(q){
+  if(!visible(q)) return '';
+  if(isReq(q)&&!answered(q)){
+    if(q.rows) return 'Falta responder uma ou mais linhas. Role a tela e confira.';
+    if(q.type==='check'&&q.max) return 'Falta responder esta pergunta. Escolha de 1 a '+q.max+' opções.';
+    return 'Falta responder esta pergunta.';
+  }
+  if(q.id==='q02_codigo'&&!/^[A-Za-z]{2}[0-9]{4}$/.test(A.q02_codigo||'')) return 'O código tem 2 letras e 4 números, como CL1503.';
+  if(q.id==='contato_telefone'&&isReq(q)&&String(A.contato_telefone||'').replace(/\D/g,'').length<10) return 'Informe o telefone com DDD, por exemplo (21) 99999-9999.';
+  return '';
+}
+function refresh(){
+  const s=SCREENS[st.S];
+  s.qs.forEach(k=>{
+    const q=Q[k], w=$('w_'+q.id); if(!w) return;
+    w.hidden=!visible(q);
+    if(q.note){ const n=$('n_'+q.id); if(n) n.hidden=!q.note.show(A); }
+  });
+  fillDyn();
+  if(st.S===0) $('btnNext').textContent=(A.consentimento==='2')?'Encerrar':'Continuar';
+}
+function showErr(q,msg){
+  const e=$('e_'+q.id); if(!e) return;
+  e.textContent=msg;
+  const w=$('w_'+q.id);
+  if(w) w.querySelectorAll('input,textarea').forEach(i=>{ if(msg) i.setAttribute('aria-invalid','true'); else i.removeAttribute('aria-invalid'); });
+}
+function onChange(ev){
+  const t=ev.target, name=t.name, q=NAMEQ[name]; if(!q) return;
+  if(t.type==='checkbox'){
+    const boxes=[...document.querySelectorAll('input[type=checkbox]')].filter(b=>b.name===name);
+    if(q.exclusive&&t.checked){
+      if(t.value===q.exclusive) boxes.forEach(b=>{if(b!==t)b.checked=false;});
+      else boxes.forEach(b=>{if(b.value===q.exclusive)b.checked=false;});
+    }
+    const av=$('a_'+q.id);
+    if(q.max&&t.checked&&boxes.filter(b=>b.checked).length>q.max){
+      t.checked=false;
+      if(av) av.textContent='Você já escolheu '+q.max+' opções. Para escolher outra, desmarque uma antes.';
+    } else if(av) av.textContent='';
+    A[name]=boxes.filter(b=>b.checked).map(b=>b.value);
+  } else if(t.type==='radio'){
+    A[name]=t.value;
+  } else {
+    A[name]=(name==='q02_codigo')?t.value.trim().toUpperCase():t.value;
+  }
+  if(answered(q)&&!errorFor(q)) showErr(q,'');
+  save(); refresh();
+}
+
+/* ---------- Telas ---------- */
+function sobrecarga(){return ['q22a_sobrecarga','q22e_tristeza'].some(k=>A[k]==='4'||A[k]==='5');}
+const MSG_SOBRE='Percebemos que você está muito sobrecarregado(a). Procure a equipe de psicologia ou assistência social após o encontro; você não precisa passar por isso sozinho(a).';
+
+function renderScreen(focus){
+  const s=SCREENS[st.S], t=$('tela'); t.textContent='';
+  const h2=h('h2',{tabindex:'-1',id:'titulo',text:s.title}); t.append(h2);
+  (s.intro||[]).forEach(p=>t.append(h('p',{text:p})));
+  if(s.final){
+    t.append(h('p',{text:'Você chegou ao fim. Muito obrigado por dedicar seu tempo. Ao tocar em "Enviar respostas", suas respostas serão enviadas de forma sigilosa.'}));
+    if(sobrecarga()) t.append(h('div',{class:'alerta',role:'status',text:MSG_SOBRE}));
+  } else if(s.qs.some(k=>Q[k].req)){
+    t.append(h('p',{class:'hint',text:'As perguntas com * precisam ser respondidas.'}));
+  }
+  s.qs.forEach(k=>t.append(renderQ(Q[k])));
+  dynCache='';
+  $('etapaTxt').textContent='Etapa '+(st.S+1)+' de '+SCREENS.length;
+  $('prog').value=Math.round((st.S+1)/SCREENS.length*100);
+  $('btnVoltar').hidden=(st.S===0);
+  $('btnNext').textContent=s.final?'Enviar respostas':'Continuar';
+  $('btnNext').disabled=false;
+  $('status').textContent='';
+  refresh();
+  window.scrollTo(0,0);
+  if(focus) h2.focus();
+}
+function go(n){st.S=n;save();renderScreen(true);}
+
+function validar(){
+  const s=SCREENS[st.S]; let first=null;
+  s.qs.forEach(k=>{
+    const q=Q[k], msg=errorFor(q); showErr(q,msg);
+    if(msg&&!first) first=q;
+  });
+  if(first){
+    const w=$('w_'+first.id);
+    const f=w.querySelector('input,textarea');
+    w.scrollIntoView({block:'start'});
+    if(f) f.focus();
+    return false;
+  }
+  return true;
+}
+
+/* ---------- Fim / envio ---------- */
+function showEnd(){
+  $('form').hidden=true; $('prog').value=100;
+  $('etapaTxt').textContent='Concluído';
+  const f=$('fim'); f.hidden=false; f.textContent='';
+  if(st.done==='recusou'){
+    f.append(h('h2',{text:'Obrigado pelo seu tempo',tabindex:'-1'}),h('p',{text:'Respeitamos a sua decisão. Nenhuma resposta foi enviada. Você pode fechar esta página.'}));
+  } else {
+    f.append(h('h2',{text:'Respostas enviadas. Muito obrigado!',tabindex:'-1'}),h('p',{text:'Sua participação ajuda a melhorar os encontros e o apoio a cuidadores. Cuide-se também.'}));
+    if(sobrecarga()) f.append(h('div',{class:'alerta',role:'status',text:MSG_SOBRE}));
+  }
+  f.querySelector('h2').focus();
+}
+function buildPayload(){
+  const p={};
+  ORDER.forEach(k=>{
+    const q=Q[k], vis=visible(q);
+    idsOf(q).forEach(id=>{
+      let v=vis?A[id]:'';
+      if(v===undefined||v===null) v='';
+      if(Array.isArray(v)) v=v.join(';');
+      else if(v!==''&&(q.type==='radio'||q.type==='scale'||q.type==='grid')) v=Number(v);
+      else if(typeof v==='string') v=v.trim();
+      p[id]=v;
+    });
+  });
+  p.q26_acertos=Object.keys(GABARITO).filter(k=>A[k]===GABARITO[k]).length;
+  p.alerta_sobrecarga=sobrecarga()?'sim':'nao';
+  p.data_hora=new Date().toISOString();
+  p.tempo_total_seg=Math.round((Date.now()-st.inicio)/1000);
+  p.id_envio=st.idEnvio;
+  p.versao_form='v1';
+  return p;
+}
+async function enviar(){
+  if(sending) return;
+  const btn=$('btnNext'), status=$('status');
+  if(!ENDPOINT_URL){ status.innerHTML=''; status.append(h('p',{class:'erro',text:'O endereço de envio ainda não foi configurado (ENDPOINT_URL). Suas respostas continuam guardadas.'})); return; }
+  sending=true; btn.disabled=true; btn.textContent='Enviando...'; status.textContent='';
+  const ctrl=new AbortController(), tm=setTimeout(()=>ctrl.abort(),20000);
+  try{
+    const res=await fetch(ENDPOINT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(buildPayload()),signal:ctrl.signal});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const r=await res.json(); if(r&&r.ok===false) throw new Error(r.erro);
+    st.done='enviado'; save(); showEnd();
+  }catch(e){
+    status.textContent='';
+    status.append(h('p',{class:'erro',text:'Não foi possível enviar agora. Suas respostas estão guardadas. Verifique a internet e toque em "Tentar enviar de novo".'}));
+    btn.disabled=false; btn.textContent='Tentar enviar de novo';
+  }finally{ clearTimeout(tm); sending=false; }
+}
+
+/* ---------- Eventos ---------- */
+$('form').addEventListener('change',onChange);
+$('form').addEventListener('input',ev=>{const t=ev.target; if(t.matches('input[type=text],input[type=tel],textarea')) onChange(ev);});
+$('btnVoltar').addEventListener('click',()=>{ if(st.S>0) go(st.S-1); });
+$('btnNext').addEventListener('click',()=>{
+  if(SCREENS[st.S].final){ enviar(); return; }
+  if(!validar()) return;
+  if(st.S===0&&A.consentimento==='2'){ st.A={}; Object.keys(A).forEach(k=>delete A[k]); st.done='recusou'; save(); showEnd(); return; }
+  go(st.S+1);
+});
+
+/* ---------- Início ---------- */
+if(st.done) showEnd(); else { st.S=Math.min(Math.max(st.S|0,0),LAST); renderScreen(false); }
+})();
+</script>
+</body>
+</html>
