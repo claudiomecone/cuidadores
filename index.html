@@ -253,7 +253,7 @@ function renderQ(q){
     const at={id:'f_'+q.id,name:q.id,'aria-describedby':'e_'+q.id+(hid?' '+hid:''),autocomplete:'off'};
     let f;
     if(q.type==='area'){at.rows='4'; f=h('textarea',at);}
-    else{ at.type=q.type==='tel'?'tel':'text'; if(q.id==='q02_codigo'){at.maxlength='30';at.autocapitalize='characters';at.spellcheck='false';} if(q.type==='tel'){at.inputmode='tel';at.autocomplete='tel';} f=h('input',at); }
+    else{ at.type=q.type==='tel'?'tel':'text'; if(q.id==='q02_codigo'){at.maxlength='50';at.autocapitalize='characters';at.spellcheck='false';} if(q.type==='tel'){at.inputmode='tel';at.autocomplete='tel';} f=h('input',at); }
     f.value=A[q.id]||'';
     w.append(f);
   } else {
