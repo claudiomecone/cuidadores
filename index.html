@@ -114,7 +114,7 @@ const Q = {
  contato_telefone:{id:'contato_telefone',type:'tel',sub:true,text:'Telefone ou WhatsApp, com DDD',hint:'Exemplo: (21) 99999-9999',req:a=>a.contato_autoriza==='1',show:a=>a.contato_autoriza==='1'},
 
  q01_momento:{id:'q01_momento',num:1,type:'radio',text:'Em que momento você está respondendo?',req:true,opts:[['1','Antes dos encontros'],['2','Logo após os encontros'],['3','30 dias depois'],['4','90 dias depois']]},
- q02_codigo:{id:'q02_codigo',num:2,type:'text',text:'Nome do participante',req:true,hint:'Coloque o seu nome + o primeiro nome do paciente. Exemplo: Maria (quem preenche) João (paciente). Este dado permite comparar suas respostas ao longo do tempo.'},
+ q02_nome:{id:'q02_nome',num:2,type:'text',text:'Nome do participante',req:true,hint:'Coloque o seu nome + o primeiro nome do paciente. Exemplo: Maria (quem preenche) João (paciente). Este dado permite comparar suas respostas ao longo do tempo.'},
  q03_primeira_aula:{id:'q03_primeira_aula',num:3,type:'radio',text:'Você participou da primeira aula sobre funções do cérebro e demências?',req:true,opts:SN,note:{show:a=>a.q03_primeira_aula==='2',text:'Entraremos em contato para reagendar a primeira aula.'}},
 
  q04_faixa_etaria:{id:'q04_faixa_etaria',num:4,type:'radio',text:'Qual é a sua faixa de idade?',req:true,opts:[['1','Até 29 anos'],['2','30 a 44 anos'],['3','45 a 59 anos'],['4','60 a 74 anos'],['5','75 anos ou mais']]},
@@ -165,8 +165,8 @@ const Q = {
 
 /* ---------- Telas (uma seção por tela) ---------- */
 const SCREENS = [
- {title:'Boas-vindas e consentimento',intro:['Olá! Obrigado por participar. Este questionário leva de 10 a 12 minutos. Você pode parar e continuar depois: suas respostas ficam guardadas neste aparelho enquanto a página estiver aberta.','Estas respostas serão usadas para melhorar os encontros e o apoio a cuidadores. Não é necessário informar seu nome. Os dados serão tratados de forma sigilosa e apresentados apenas de forma agrupada, conforme a LGPD. Você pode deixar de responder qualquer pergunta.'],qs:['consentimento','contato_autoriza','contato_telefone']},
- {title:'Sobre esta resposta',qs:['q01_momento','q02_codigo','q03_primeira_aula']},
+ {title:'Boas-vindas e consentimento',intro:['Olá! Obrigado por participar. Este questionário leva de 10 a 12 minutos. Você pode parar e continuar depois: suas respostas ficam guardadas neste aparelho enquanto a página estiver aberta.','Estas respostas serão usadas para melhorar os encontros e o apoio a cuidadores. Pedimos o seu nome e o primeiro nome do paciente apenas para acompanhar suas respostas ao longo do tempo. Os dados serão tratados de forma sigilosa e apresentados apenas de forma agrupada, conforme a LGPD. Você pode deixar de responder qualquer pergunta.'],qs:['consentimento','contato_autoriza','contato_telefone']},
+ {title:'Sobre esta resposta',qs:['q01_momento','q02_nome','q03_primeira_aula']},
  {title:'Sobre você',qs:['q04_faixa_etaria','q05_parentesco','q06_mora_junto','q07_trabalho']},
  {title:'Sobre a pessoa cuidada',qs:['q08_idade_cuidado','q09_diagnostico','q09_outro_texto','q10_fase']},
  {title:'Atividades do dia a dia',qs:['q11','q12_eventos']},
@@ -253,7 +253,7 @@ function renderQ(q){
     const at={id:'f_'+q.id,name:q.id,'aria-describedby':'e_'+q.id+(hid?' '+hid:''),autocomplete:'off'};
     let f;
     if(q.type==='area'){at.rows='4'; f=h('textarea',at);}
-    else{ at.type=q.type==='tel'?'tel':'text'; if(q.id==='q02_codigo'){at.maxlength='50';at.autocapitalize='characters';at.spellcheck='false';} if(q.type==='tel'){at.inputmode='tel';at.autocomplete='tel';} f=h('input',at); }
+    else{ at.type=q.type==='tel'?'tel':'text'; if(q.id==='q02_nome'){at.maxlength='80';at.autocapitalize='words';} if(q.type==='tel'){at.inputmode='tel';at.autocomplete='tel';} f=h('input',at); }
     f.value=A[q.id]||'';
     w.append(f);
   } else {
@@ -295,7 +295,7 @@ function errorFor(q){
     if(q.type==='check'&&q.max) return 'Falta responder esta pergunta. Escolha de 1 a '+q.max+' opções.';
     return 'Falta responder esta pergunta.';
   }
-  if(q.id==='q02_codigo'&&!/^[A-Za-z]{2}[0-9]{4}$/.test(A.q02_codigo||'')) return 'O código tem 2 letras e 4 números, como CL1503.';
+  if(q.id==='q02_nome'&&String(A.q02_nome||'').trim().length<3) return 'Escreva o seu nome e o primeiro nome do paciente.';
   if(q.id==='contato_telefone'&&isReq(q)&&String(A.contato_telefone||'').replace(/\D/g,'').length<10) return 'Informe o telefone com DDD, por exemplo (21) 99999-9999.';
   return '';
 }
@@ -332,7 +332,7 @@ function onChange(ev){
   } else if(t.type==='radio'){
     A[name]=t.value;
   } else {
-    A[name]=(name==='q02_codigo')?t.value.trim().toUpperCase():t.value;
+    A[name]=t.value;
   }
   if(answered(q)&&!errorFor(q)) showErr(q,'');
   save(); refresh();
