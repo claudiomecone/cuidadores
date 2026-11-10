@@ -114,7 +114,7 @@ const Q = {
  contato_telefone:{id:'contato_telefone',type:'tel',sub:true,text:'Telefone ou WhatsApp, com DDD',hint:'Exemplo: (21) 99999-9999',req:a=>a.contato_autoriza==='1',show:a=>a.contato_autoriza==='1'},
 
  q01_momento:{id:'q01_momento',num:1,type:'radio',text:'Em que momento você está respondendo?',req:true,opts:[['1','Antes dos encontros'],['2','Logo após os encontros'],['3','30 dias depois'],['4','90 dias depois']]},
- q02_codigo:{id:'q02_codigo',num:2,type:'text',text:'Nome do participante',req:true,hint:'Coloque o seu nome + o primeiro nome do paciente. Exemplo: Maria (quem preenche) João (paciente). Este dado permite comparar suas respostas ao longo do tempo sem mostrar seu nome.'},
+ q02_codigo:{id:'q02_codigo',num:2,type:'text',text:'Nome do participante',req:true,hint:'Coloque o seu nome + o primeiro nome do paciente. Exemplo: Maria (quem preenche) João (paciente). Este dado permite comparar suas respostas ao longo do tempo.'},
  q03_primeira_aula:{id:'q03_primeira_aula',num:3,type:'radio',text:'Você participou da primeira aula sobre funções do cérebro e demências?',req:true,opts:SN,note:{show:a=>a.q03_primeira_aula==='2',text:'Entraremos em contato para reagendar a primeira aula.'}},
 
  q04_faixa_etaria:{id:'q04_faixa_etaria',num:4,type:'radio',text:'Qual é a sua faixa de idade?',req:true,opts:[['1','Até 29 anos'],['2','30 a 44 anos'],['3','45 a 59 anos'],['4','60 a 74 anos'],['5','75 anos ou mais']]},
