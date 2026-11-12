@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel – Desafios no cuidado de pessoas com demência</title>
+<style>
+  :root{--bg:#f3f8f9;--tx:#16262e;--mut:#3d5560;--pri:#1d5c78;--pri2:#154560;--ver:#2b6a4d;--card:#fff;--bd:#c3d3da;--alto:#9a2a2a;--mod:#a66a00;--bai:#2b6a4d}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:1.05rem;line-height:1.5}
+  [hidden]{display:none!important}
+  main{max-width:1100px;margin:0 auto;padding:16px 16px 48px}
+  h1{font-size:1.45rem;margin:6px 0 4px;color:var(--pri2)}
+  h2{font-size:1.2rem;margin:28px 0 10px;color:var(--pri2)}
+  h3{font-size:1.05rem;margin:0 0 10px}
+  .barra{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0}
+  .st{color:var(--mut);font-size:.95rem;margin:0}
+  .demo{background:#fff6dd;border-left:6px solid #b58900;color:#5a4300;padding:8px 12px;border-radius:6px;margin:8px 0;font-weight:600}
+  .erro{background:#fdeeee;border-left:6px solid #8a1c1c;color:#8a1c1c;padding:8px 12px;border-radius:6px;margin:8px 0;font-weight:600}
+  label{font-weight:600}
+  select,input[type=password]{font:inherit;min-height:44px;padding:6px 12px;border:2px solid #7f9aa6;border-radius:10px;background:#fff;color:var(--tx)}
+  button{font:inherit;font-weight:700;min-height:44px;padding:6px 18px;border-radius:10px;border:2px solid var(--pri);background:#fff;color:var(--pri2);cursor:pointer}
+  button.p{background:var(--pri);color:#fff}
+  :focus-visible{outline:3px solid #0b3d91;outline-offset:2px}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+  .kpis{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px 16px}
+  .kpi .v{font-size:1.9rem;font-weight:800;color:var(--pri2);line-height:1.1}
+  .kpi .l{font-weight:600}
+  .kpi .s{color:var(--mut);font-size:.9rem}
+  .kpi.al .v{color:var(--alto)}
+  ul.bars{list-style:none;margin:0;padding:0}
+  ul.bars li{margin-bottom:10px}
+  .bl{display:flex;justify-content:space-between;gap:8px;font-size:.98rem}
+  .bt{height:12px;background:#e1ebee;border-radius:6px;overflow:hidden;margin-top:3px}
+  .bf{height:100%;background:var(--pri)}
+  .bf.alto{background:var(--alto)}.bf.mod{background:var(--mod)}.bf.bai{background:var(--bai)}
+  .scroll{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;min-width:560px}
+  th,td{padding:8px 10px;border-bottom:1px solid var(--bd);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  th{background:#e8f1f3}
+  .dias{display:flex;align-items:stretch;gap:4px;height:200px;overflow-x:auto}
+  .dcol{display:flex;flex-direction:column;align-items:center;min-width:36px}
+  .dtrack{flex:1;display:flex;align-items:flex-end;width:100%;justify-content:center}
+  .dbar{width:22px;background:var(--pri);min-height:2px;border-radius:3px 3px 0 0}
+  .dn{font-weight:700;font-size:.9rem}.dl{font-size:.8rem;color:var(--mut)}
+  .delta{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bd)}
+  .vazio{color:var(--mut)}
+  .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Painel: desafios no cuidado de pessoas com demência</h1>
+  <div id="aviso"></div>
+
+  <form id="login" hidden onsubmit="return false">
+    <p><label for="senha">Senha de acesso ao painel</label></p>
+    <div class="barra">
+      <input id="senha" type="password" autocomplete="current-password">
+      <button class="p" id="entrar" type="submit">Entrar</button>
+    </div>
+  </form>
+
+  <div id="painel" hidden>
+    <div class="barra">
+      <label for="fMomento">Momento:</label>
+      <select id="fMomento"></select>
+      <button id="atualizar" type="button">Atualizar agora</button>
+      <button id="sair" type="button">Sair</button>
+    </div>
+    <p class="st" id="status" aria-live="polite"></p>
+    <div id="conteudo"></div>
+  </div>
+</main>
+
+<script>
+/* COLOQUE AQUI o endereço /exec do Apps Script. Vazio = modo demonstração. */
+const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbzrukWgD8n8uVyykREm1iwSZvSTsKg-3P-YQg7sbhK_AsfrHdLRP2VvyqjBW_SxvUqmZQ/exec";
+
+const MOMENTOS = ['Antes dos encontros','Logo após os encontros','30 dias depois','90 dias depois'];
+const INTERVALO_MS = 60000;
+let dados = null, token = '', demo = false, timer = null;
+
+const $ = id => document.getElementById(id);
+function el(t,c,txt){const e=document.createElement(t); if(c)e.className=c; if(txt!==undefined)e.textContent=txt; return e;}
+const vals=(rs,k)=>rs.map(r=>r[k]).filter(v=>v!==''&&v!==null&&v!==undefined).map(Number).filter(n=>!isNaN(n));
+const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+const fmt=(n,d=1)=>n===null||n===undefined?'–':n.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const pc=(a,b)=>b?a/b*100:0;
+const sinal=n=>n===null?'–':(n>0.004?'+':n<-0.004?'−':'')+fmt(Math.abs(n),2);
+function contar(rs,k){const m={};rs.forEach(r=>{const v=r[k];if(v!==''&&v!==null&&v!==undefined)m[v]=(m[v]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
+
+/* ---------- Demonstração ---------- */
+function gerarDemo(){
+  let s=11; const R=()=>(s=(s*16807)%2147483647)/2147483647;
+  const pick=a=>a[Math.floor(R()*a.length)];
+  const some=(a,n)=>{const c=a.slice(),o=[];for(let i=0;i<n&&c.length;i++)o.push(c.splice(Math.floor(R()*c.length),1)[0]);return o;};
+  const DES=['Agressividade, irritabilidade ou agitação','Resistência a cuidados','Dificuldade de comunicação','Sono e confusão dia-noite','Meu cansaço e estresse','Culpa, tristeza ou medo do futuro','Isolamento e falta de tempo para mim','Quedas e segurança em casa','Incontinência e higiene'];
+  const ORI=['Como lidar com agressividade e agitação','Como se comunicar melhor','Sono','Cuidar de mim','Medicamentos','Direitos, benefícios e curatela','Quedas e segurança'];
+  const SER=['Grupo de apoio para familiares','Atendimento psicológico','Orientação jurídica e social','Centro-dia','Cuidador de apoio','Grupo de WhatsApp'];
+  const CAN=['Encontros presenciais','Online ao vivo','Vídeos gravados','Material escrito','WhatsApp'];
+  const PAR=['Filho(a)','Cônjuge ou companheiro(a)','Neto(a)','Irmão(ã)','Cuidador(a) profissional'];
+  const FAS=['Leve','Moderada','Avançada','Não sei'];
+  const HOR=['Até 2 h','3 a 6 h','7 a 12 h','Mais de 12 h','24 h, sem pausas'];
+  const AJU=['Nenhuma','1 pessoa','2 pessoas','3 ou mais'];
+  const SON=['Menos de 4 h','4 a 5 h','6 a 7 h','8 h ou mais'];
+  const bi=[],mu=[]; let id=0;
+  for(let p=1;p<=25;p++){
+    const k=1+Math.floor(R()*3), base=2.6+R()*1.6;
+    for(let m=0;m<k;m++){
+      id++;
+      const esc=Math.max(1,Math.min(5,base-m*0.35+(R()-.5)*.5));
+      const iso=new Date(Date.now()-(80-id)*0.8*86400000).toISOString();
+      const mo=MOMENTOS[m], eid='d'+id;
+      bi.push({id_envio:eid,data_hora:iso,data:iso,momento:mo,participante:'p'+p,escore_sobrecarga:+esc.toFixed(2),
+        nivel_sobrecarga:esc>=3.5?'Alto':esc>=2.5?'Moderado':'Baixo',alerta_sobrecarga:esc>=3.8?'sim':'nao',
+        confianca_media:+Math.min(10,4+m*1.2+R()*2).toFixed(2),entendimento:Math.min(10,Math.round(4+m*1.3+R()*2)),
+        acertos:Math.min(5,Math.round(2+m*.8+R()*1.5)),avaliacao_encontros:m>0?Math.round(7+R()*3):'',
+        tempo_total_min:+(9+R()*5).toFixed(1),desafio_mais_dificil:pick(DES),risco_isolamento:R()<.2?'sim':'nao',
+        parentesco:pick(PAR),fase_doenca:pick(FAS),horas_dia:pick(HOR),ajudantes:pick(AJU),horas_sono:pick(SON)});
+      [['Desafios',DES],['Orientações desejadas',ORI],['Serviços desejados',SER],['Canais preferidos',CAN]]
+        .forEach(([q,lista])=>some(lista,1+Math.floor(R()*3)).forEach(o=>mu.push({id_envio:eid,pergunta:q,opcao:o,momento:mo})));
+    }
+  }
+  return {ok:true,atualizado:new Date().toISOString(),bi,multipla:mu};
+}
+
+/* ---------- Componentes ---------- */
+function card(parent,titulo){const c=el('div','card');if(titulo)c.append(el('h3',null,titulo));parent.append(c);return c;}
+function kpi(parent,rotulo,valor,sub,alerta){const c=el('div','card kpi'+(alerta?' al':''));c.append(el('div','v',valor),el('div','l',rotulo));if(sub)c.append(el('div','s',sub));parent.append(c);}
+function barras(parent,titulo,itens,total,cls,limite){
+  const c=card(parent,titulo);
+  if(!itens.length){c.append(el('p','vazio','Ainda sem respostas.'));return;}
+  const ul=el('ul','bars');
+  itens.slice(0,limite||8).forEach(([nome,n])=>{
+    const p=pc(n,total), li=el('li'), l=el('div','bl'), t=el('div','bt'), f=el('div','bf'+(cls&&cls[nome]?' '+cls[nome]:''));
+    l.append(el('span',null,nome),el('span',null,n+' ('+fmt(p,0)+'%)'));
+    f.style.width=Math.min(100,p)+'%'; f.setAttribute('aria-hidden','true'); t.append(f);
+    li.append(l,t); ul.append(li);
+  });
+  c.append(ul);
+}
+
+/* ---------- Renderização ---------- */
+function render(){
+  const mom=$('fMomento').value, box=$('conteudo'); box.textContent='';
+  const bi=dados.bi.filter(r=>!mom||r.momento===mom), n=bi.length;
+  const ids=new Set(bi.map(r=>r.id_envio)), mu=dados.multipla.filter(r=>ids.has(r.id_envio));
+  const nAlerta=bi.filter(r=>r.alerta_sobrecarga==='sim').length;
+  const nAlto=bi.filter(r=>r.nivel_sobrecarga==='Alto').length;
+  const nIso=bi.filter(r=>r.risco_isolamento==='sim').length;
+
+  box.append(el('h2',null,'Visão geral'));
+  const k=el('div','kpis');
+  kpi(k,'Respostas',String(n),mom||'Todos os momentos');
+  kpi(k,'Em alerta de sobrecarga',fmt(pc(nAlerta,n),0)+'%',nAlerta+' pessoa(s) · procurar equipe',nAlerta>0);
+  kpi(k,'Sobrecarga média (1–5)',fmt(avg(vals(bi,'escore_sobrecarga')),2),'Nível alto: '+fmt(pc(nAlto,n),0)+'%');
+  kpi(k,'Confiança média (0–10)',fmt(avg(vals(bi,'confianca_media')),1));
+  kpi(k,'Entendimento da doença (0–10)',fmt(avg(vals(bi,'entendimento')),1),'Acertos médios: '+fmt(avg(vals(bi,'acertos')),1)+' de 5');
+  kpi(k,'Avaliação dos encontros (0–10)',fmt(avg(vals(bi,'avaliacao_encontros')),1),'Só quem respondeu depois');
+  kpi(k,'Cuidam sozinhos(as) 12 h ou mais',fmt(pc(nIso,n),0)+'%',nIso+' pessoa(s)');
+  kpi(k,'Tempo médio de resposta',fmt(avg(vals(bi,'tempo_total_min')),1)+' min');
+  box.append(k);
+
+  box.append(el('h2',null,'Mudança ao longo dos encontros'));
+  const ce=card(box,'Média por momento (todos os momentos)'), sc=el('div','scroll'), t=el('table');
+  const cap=el('caption','vh','Médias de sobrecarga, confiança, entendimento, acertos e avaliação por momento'); t.append(cap);
+  const hr=el('tr'); ['Momento','Respostas','Sobrecarga (1–5)','Confiança (0–10)','Entendimento (0–10)','Acertos (0–5)','Avaliação (0–10)'].forEach(x=>{const th=el('th',null,x);th.scope='col';hr.append(th);});
+  const th=el('thead');th.append(hr);t.append(th);
+  const tb=el('tbody');
+  MOMENTOS.forEach(m=>{
+    const rs=dados.bi.filter(r=>r.momento===m), tr=el('tr'), h=el('th',null,m); h.scope='row'; h.style.background='transparent'; h.style.fontWeight='600';
+    tr.append(h);
+    [String(rs.length),fmt(avg(vals(rs,'escore_sobrecarga')),2),fmt(avg(vals(rs,'confianca_media')),1),fmt(avg(vals(rs,'entendimento')),1),fmt(avg(vals(rs,'acertos')),1),fmt(avg(vals(rs,'avaliacao_encontros')),1)].forEach(x=>tr.append(el('td',null,x)));
+    tb.append(tr);
+  });
+  t.append(tb);sc.append(t);ce.append(sc);
+  ce.append(el('p','st','Sobrecarga: quanto menor, melhor. Nas demais colunas, quanto maior, melhor.'));
+
+  const por={}; dados.bi.forEach(r=>{if(r.participante)(por[r.participante]=por[r.participante]||[]).push(r);});
+  const pares=Object.values(por).map(a=>{const u={};a.forEach(r=>u[r.momento]=r);const ms=MOMENTOS.filter(m=>u[m]);return ms.length>=2?[u[ms[0]],u[ms[ms.length-1]]]:null;}).filter(Boolean);
+  const delta=key=>avg(pares.map(([a,b])=>[a[key],b[key]]).filter(([x,y])=>x!==''&&y!==''&&x!=null&&y!=null).map(([x,y])=>Number(y)-Number(x)));
+  const cp=card(box,'Mudança por pessoa (primeira resposta → última)');
+  if(!pares.length) cp.append(el('p','vazio','Ainda não há participantes com respostas em dois momentos diferentes.'));
+  else{
+    cp.append(el('p','st',pares.length+' participante(s) com 2 ou mais momentos.'));
+    [['Sobrecarga (menor é melhor)','escore_sobrecarga'],['Confiança','confianca_media'],['Entendimento da doença','entendimento'],['Acertos no quiz','acertos']].forEach(([l,key])=>{
+      const d=el('div','delta');d.append(el('span',null,l),el('strong',null,sinal(delta(key))));cp.append(d);
+    });
+  }
+
+  box.append(el('h2',null,'Prioridades de conteúdo'));
+  const g1=el('div','grid');
+  const only=q=>contar(mu.filter(r=>r.pergunta===q),'opcao');
+  barras(g1,'Desafios mais citados (escolha até 3)',only('Desafios'),n,null,8);
+  barras(g1,'Desafio mais difícil',contar(bi,'desafio_mais_dificil'),n,null,8);
+  barras(g1,'Orientações mais úteis',only('Orientações desejadas'),n,null,8);
+  barras(g1,'Serviços desejados',only('Serviços desejados'),n,null,8);
+  barras(g1,'Como preferem receber informações',only('Canais preferidos'),n,null,6);
+  box.append(g1);
+
+  box.append(el('h2',null,'Sobrecarga e perfil'));
+  const g2=el('div','grid');
+  const ordem={Alto:0,Moderado:1,Baixo:2}, niv=contar(bi,'nivel_sobrecarga').sort((a,b)=>ordem[a[0]]-ordem[b[0]]);
+  barras(g2,'Nível de sobrecarga',niv,n,{Alto:'alto',Moderado:'mod',Baixo:'bai'});
+  barras(g2,'Horas de cuidado por dia',contar(bi,'horas_dia'),n);
+  barras(g2,'Pessoas que ajudam além do cuidador',contar(bi,'ajudantes'),n);
+  barras(g2,'Horas de sono por noite',contar(bi,'horas_sono'),n);
+  barras(g2,'Relação com a pessoa cuidada',contar(bi,'parentesco'),n);
+  barras(g2,'Fase da doença (percepção)',contar(bi,'fase_doenca'),n);
+  box.append(g2);
+
+  box.append(el('h2',null,'Respostas por dia'));
+  const cd=card(box,null), dias={}; bi.forEach(r=>{const d=String(r.data).slice(0,10);if(d)dias[d]=(dias[d]||0)+1;});
+  const ks=Object.keys(dias).sort().slice(-30);
+  if(!ks.length) cd.append(el('p','vazio','Ainda sem respostas.'));
+  else{
+    const mx=Math.max.apply(null,ks.map(x=>dias[x])), w=el('div','dias');
+    ks.forEach(x=>{
+      const c=el('div','dcol'), tr=el('div','dtrack'), b=el('div','dbar');
+      b.style.height=(dias[x]/mx*100)+'%'; b.setAttribute('aria-hidden','true'); tr.append(b);
+      c.title=x.slice(8,10)+'/'+x.slice(5,7)+': '+dias[x]+' resposta(s)';
+      c.append(tr,el('span','dn',String(dias[x])),el('span','dl',x.slice(8,10)+'/'+x.slice(5,7)));
+      w.append(c);
+    });
+    cd.append(w);
+  }
+  box.append(el('p','st','Os nomes não aparecem neste painel. Para contatar quem está em alerta, use a aba da planilha restrita à equipe.'));
+}
+
+/* ---------- Carga de dados ---------- */
+function msg(texto,cls){const a=$('aviso');a.textContent='';if(texto){const d=el('div',cls,texto);d.setAttribute('role',cls==='erro'?'alert':'status');a.append(d);}}
+function mostrar(){
+  $('login').hidden=true; $('painel').hidden=false;
+  const f=$('fMomento');
+  if(!f.options.length){const o=el('option',null,'Todos');o.value='';f.append(o);MOMENTOS.forEach(m=>{const x=el('option',null,m);x.value=m;f.append(x);});}
+  render();
+  $('status').textContent='Atualizado às '+new Date().toLocaleTimeString('pt-BR')+(demo?' · dados fictícios':' · atualiza sozinho a cada 60 segundos');
+}
+function pedirSenha(erro){
+  clearInterval(timer); $('painel').hidden=true; $('login').hidden=false;
+  msg(erro||'', 'erro'); $('senha').focus();
+}
+async function carregar(){
+  if(!ENDPOINT_URL){ demo=true; dados=gerarDemo(); msg('Modo demonstração: os dados abaixo são fictícios. Coloque o endereço do Apps Script em ENDPOINT_URL.','demo'); mostrar(); return; }
+  try{
+    const res=await fetch(ENDPOINT_URL+'?token='+encodeURIComponent(token),{cache:'no-store'});
+    const j=await res.json();
+    if(!j.ok){ if(j.erro==='acesso negado'){ sessionStorage.removeItem('painel_token'); token=''; pedirSenha('Senha incorreta. Tente de novo.'); return; } throw new Error(j.erro||'erro'); }
+    dados=j; msg(''); mostrar();
+    clearInterval(timer); timer=setInterval(carregar,INTERVALO_MS);
+  }catch(e){
+    msg('Não foi possível atualizar agora. Mostrando os últimos dados carregados. Verifique a internet e o endereço do script.','erro');
+    if(dados){ $('login').hidden=true; $('painel').hidden=false; }
+    else pedirSenha('Não foi possível carregar os dados.');
+  }
+}
+
+$('fMomento').addEventListener('change',()=>dados&&render());
+$('atualizar').addEventListener('click',carregar);
+$('sair').addEventListener('click',()=>{sessionStorage.removeItem('painel_token');token='';dados=null;clearInterval(timer);if(ENDPOINT_URL)pedirSenha('');else carregar();});
+$('login').addEventListener('submit',()=>{token=$('senha').value;sessionStorage.setItem('painel_token',token);$('senha').value='';carregar();});
+
+token=sessionStorage.getItem('painel_token')||'';
+if(!ENDPOINT_URL||token) carregar(); else pedirSenha('');
+</script>
+</body>
+</html>
